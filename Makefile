@@ -8,7 +8,7 @@ PKG_MAINTAINER:=simonchen
 
 LUCI_TITLE:=LuCI page for Argon Config
 LUCI_PKGARCH:=all
-LUCI_DEPENDS:=+luci-compat +luci-lib-ipkg +luci-theme-argon
+LUCI_DEPENDS:=+luci-compat +luci-lib-ipkg
 
 define Package/$(PKG_NAME)/conffiles
 /etc/config/argon
