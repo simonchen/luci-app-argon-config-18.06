@@ -1,0 +1,97 @@
+
+<canvas id="cursor-canvas" style="position:fixed;top:0;left:0;z-index:999;pointer-events:none;"></canvas>
+
+<script type="text/javascript">
+(function() {
+    var canvas = document.getElementById('cursor-canvas');
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    
+    // --- 【核心调优参数】 ---
+    var config = {
+        count: 100,          // 1. 数量：如果你觉得稀疏，调回到 100-120
+        dist: 6000,          // 2. 非跟随线条距离：调大这个，背景线条会变多变长
+        mDist: 25000,        // 3. 鼠标吸引范围
+        attract: 0.04,       
+        offsetX: 50,         // 偏移量
+        offsetY: 50,         
+        opacity: 0.6,        // 4. 【关键】最高透明度：调大这个(0.1-1.0)，线条会变亮变实
+        lineWidth: 1.1,      // 5. 【关键】线条粗细：调大这个，线条会变粗
+        color: "46, 175, 125" 
+    };
+
+    var mouse = { x: null, y: null, max: config.mDist };
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.onresize = resize;
+    resize();
+
+    window.onmousemove = function(e) {
+        mouse.x = e.clientX + config.offsetX;
+        mouse.y = e.clientY + config.offsetY;
+    };
+    
+    window.onmouseout = function() {
+        mouse.x = null;
+        mouse.y = null;
+    };
+
+    for (var i = 0; i < config.count; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            xa: (Math.random() * 2 - 1) * 0.5,
+            ya: (Math.random() * 2 - 1) * 0.5,
+            max: config.dist
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        var all = [mouse].concat(particles);
+
+        particles.forEach(function(p) {
+            p.x += p.xa;
+            p.y += p.ya;
+            p.xa *= (p.x > canvas.width || p.x < 0) ? -1 : 1;
+            p.ya *= (p.y > canvas.height || p.y < 0) ? -1 : 1;
+
+            for (var j = 0; j < all.length; j++) {
+                var d2 = all[j];
+                if (p === d2 || d2.x === null || d2.y === null) continue;
+
+                var xc = p.x - d2.x;
+                var yc = p.y - d2.y;
+                var dis = xc * xc + yc * yc;
+
+                var curMax = (d2 === mouse) ? mouse.max : p.max;
+
+                if (dis < curMax) {
+                    if (d2 === mouse && dis >= curMax / 2) {
+                        p.x -= xc * config.attract;
+                        p.y -= yc * config.attract;
+                    }
+                    
+                    // 计算基础透明度比率
+                    var ratio = (curMax - dis) / curMax;
+                    
+                    ctx.beginPath();
+                    // --- 这里的修改让线条变明显 ---
+                    ctx.lineWidth = ratio * config.lineWidth; 
+                    // 直接使用 config.opacity 乘以距离占比，不再硬编码 0.1
+                    ctx.strokeStyle = "rgba(" + config.color + "," + (ratio * config.opacity) + ")";
+                    
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(d2.x, d2.y);
+                    ctx.stroke();
+                }
+            }
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+</script>
