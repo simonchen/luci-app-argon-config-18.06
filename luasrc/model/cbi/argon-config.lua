@@ -3,6 +3,7 @@ local wa = require 'luci.tools.webadmin'
 local opkg = require 'luci.model.ipkg'
 local sys = require 'luci.sys'
 local http = require 'luci.http'
+local util  = require 'luci.util'
 local nutil = require 'nixio.util'
 local name = 'argon'
 local uci = require 'luci.model.uci'.cursor()
@@ -14,7 +15,9 @@ local space_used = space_total - space_free
 
 local free_byte = space_free * fstat.frsize
 
-local primary, dark_primary, blur_radius, blur_radius_dark, blur_opacity, mode
+local primary, dark_primary, blur_radius, blur_radius_dark, blur_opacity, mode, bing_background
+local login_panel_center, logo_url, custom_script
+
 if nxfs.access('/etc/config/argon') then
 	primary = uci:get_first('argon', 'global', 'primary')
 	dark_primary = uci:get_first('argon', 'global', 'dark_primary')
@@ -26,6 +29,7 @@ if nxfs.access('/etc/config/argon') then
 	bing_background = uci:get_first('argon', 'global', 'bing_background')
 	login_panel_center = uci:get_first('argon', 'global', 'login_panel_center')
 	logo_url = uci:get_first('argon', 'global', 'logo_url')
+	custom_script = uci:get_first('argon', 'global', 'custom_script') or "/etc/config/argon_custom_script"
 end
 
 function glob(...)
@@ -56,6 +60,24 @@ br = SimpleForm('config', translate('Argon Config'), translate('Here you can set
 br.reset = false
 br.submit = false
 s = br:section(SimpleSection) 
+
+
+f = s:option(TextValue, "custom_script", translate('Custom script'))
+f.datatype = "string"
+f.rows = 20
+f.rmempty = true
+
+function f.cfgvalue()
+        return nxfs.readfile(custom_script) or ""
+end
+
+function f.write(self, section, data)
+        return nxfs.writefile(custom_script, "\n" .. util.trim(data:gsub("\r\n", "\n")) .. "\n")
+end
+
+function f.remove(self, section, value)
+        return nxfs.writefile(input, "")
+end
 
 o = s:option(Value, "logo_url", translate('Logo URL'), translate('Setting web url or local path (e.g, /www/logo.jpg)'))
 o.default = logo_url
