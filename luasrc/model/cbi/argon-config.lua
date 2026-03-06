@@ -62,7 +62,7 @@ br.submit = false
 s = br:section(SimpleSection) 
 
 
-f = s:option(TextValue, "custom_script", translate('Custom script'))
+f = s:option(TextValue, "custom_script", translate('Custom script'), translate('Warning: Incorrect HTML/Javascript scripts may cause the entire page to crash!'))
 f.datatype = "string"
 f.rows = 20
 f.rmempty = true

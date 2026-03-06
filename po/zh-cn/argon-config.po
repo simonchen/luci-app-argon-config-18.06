@@ -35,6 +35,9 @@ msgstr "登录面板中心对齐"
 msgid "Custom script"
 msgstr "自定义脚本"
 
+msgid "Warning: Incorrect HTML/Javascript scripts may cause the entire page to crash!"
+msgstr "警告: 错误的 HTML/Javascript 脚本可能会导致全部页面出错!"
+
 msgid "Setting web url or local path (e.g, /www/logo.jpg)"
 msgstr "设置web url 或者用本地相对路径 (例如, /www/logo.jpg)"
 
