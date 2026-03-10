@@ -1,4 +1,270 @@
 
+<script type="text/javascript">
+// 动态数学动画屏保
+(function() {
+    // --- 1. 配置参数 ---
+    const showScope = true;           
+    const showReticleTicks = true;    
+    const showRedCenter = true;       
+    const hasBreathEffect = true;     // [开关] 呼吸律动
+    
+    const bgColor = "rgba(0, 0, 0, 0.7)"; 
+    const idleSeconds = 5;  
+    const holeRadius = 150; 
+    const feather = 20;
+
+    const randomTexts = ["TARGET", "LOCKED", "READY", "FIRE", "MATH", "INF"];
+    const waveTypes = ['sin', 'cos', 'tan', 'cot'];
+
+    // --- 2. 注入动画 CSS (修正 transform 冲突) ---
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes scopeBreath {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        .scope-breathing-layer {
+            animation: scopeBreath 6s ease-in-out infinite !important;
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // --- 3. 创建容器 ---
+    const bgContainer = document.createElement('div');
+    bgContainer.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:2147483645;background:${bgColor};backdrop-filter:blur(10px);opacity:0;visibility:hidden;transition:opacity 0.8s ease;pointer-events:none;cursor:pointer;overflow:hidden;`;
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;transition:opacity 0.5s ease;";
+    bgContainer.appendChild(canvas);
+    document.body.appendChild(bgContainer);
+
+    // --- 4. 创建准星组件 (嵌套结构解决动画冲突) ---
+    const scopeWrapper = document.createElement('div');
+    scopeWrapper.id = 'tactical-scope-reticle';
+    scopeWrapper.style.cssText = `position:fixed; width:${holeRadius*2}px; height:${holeRadius*2}px; pointer-events:none; display:none; opacity:0; z-index:2147483646; transform:translate(-50%, -50%); transition:opacity 0.3s ease;`;
+
+    // 内部增加一层专门跑动画，不影响外层的 translate 定位
+    const animationLayer = document.createElement('div');
+    if (hasBreathEffect) animationLayer.className = 'scope-breathing-layer';
+    scopeWrapper.appendChild(animationLayer);
+
+    const mainScopeColor = "#333"; // 金属深灰
+
+    const addPart = (w, h, t, l, color, z = 5, bR = "0") => {
+        const part = document.createElement('div');
+        const shadow = color === 'red' ? 'none' : '0 0 1px rgba(255,255,255,0.5)';
+        part.style.cssText = `position:absolute; background:${color}; width:${w}; height:${h}; top:${t}; left:${l}; transform:translate(-50%, -50%); z-index:${z}; border-radius:${bR}; box-shadow:${shadow};`;
+        animationLayer.appendChild(part);
+    };
+
+    if (showScope) {
+        // A. 外部粗线
+        addPart('3px', '60px', '10%', '50%', mainScopeColor); 
+        addPart('3px', '60px', '90%', '50%', mainScopeColor); 
+        addPart('60px', '3px', '50%', '10%', mainScopeColor); 
+        addPart('60px', '3px', '50%', '90%', mainScopeColor); 
+
+        // B. 细分划线
+        addPart('1px', '85%', '50%', '50%', mainScopeColor); 
+        addPart('85%', '1px', '50%', '50%', mainScopeColor); 
+
+        // C. 刻度线
+        if (showReticleTicks) {
+            for (let i = -5; i <= 5; i++) {
+                if (i === 0 || Math.abs(i) > 4) continue;
+                let offset = i * 28; 
+                const tW = (i % 2 === 0) ? '12px' : '6px';
+                addPart(tW, '1.5px', `calc(50% + ${offset}px)`, '50%', mainScopeColor);
+                addPart('1.5px', tW, '50%', `calc(50% + ${offset}px)`, mainScopeColor);
+            }
+        }
+
+        // D. 红色准星
+        if (showRedCenter) {
+            addPart('1.5px', '22px', '50%', '50%', '#ff2222', 10);
+            addPart('22px', '1.5px', '50%', '50%', '#ff2222', 10);
+            addPart('5px', '5px', '50%', '50%', '#ff0000', 11, '50%');
+        }
+    }
+
+    document.body.appendChild(scopeWrapper);
+
+    // --- 5. 绘图逻辑 ---
+    let offset = 0, typeIndex = 0, isShowing = false, isInteracting = false;
+    const ctx = canvas.getContext('2d');
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    window.addEventListener('resize', resize); resize();
+    setInterval(() => { if(isShowing && !isInteracting) typeIndex = (typeIndex + 1) % 4; }, 10000);
+
+    function drawWaves() {
+        if (!isShowing || isInteracting) { requestAnimationFrame(drawWaves); return; }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const midY = canvas.height / 2, amp = 120, freq = 0.015, currentType = waveTypes[typeIndex];
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(canvas.width, midY); ctx.stroke();
+        for (let x = 0; x < canvas.width; x += 45) {
+            let y; const angle = (x + offset) * freq;
+            if (currentType === 'sin') y = midY + Math.sin(angle) * amp;
+            else if (currentType === 'cos') y = midY + Math.cos(angle) * amp;
+            else if (currentType === 'tan') y = midY + Math.tan(angle) * 60;
+            else if (currentType === 'cot') y = midY + (1 / Math.tan(angle)) * 60;
+            if (y < -200 || y > canvas.height + 200) continue;
+            ctx.fillStyle = `hsl(${(x + offset) % 360}, 70%, 50%)`; ctx.font = "bold 14px monospace";
+            ctx.fillText(randomTexts[x % randomTexts.length], x, y);
+        }
+        offset += 2.5; requestAnimationFrame(drawWaves);
+    }
+    drawWaves();
+
+    // --- 6. 交互逻辑 ---
+    let idleTimer = null, restoreTimer = null;
+    const updateUI = (e, active) => {
+        if (active && showScope) {
+            const x = e.clientX, y = e.clientY;
+            const mask = `radial-gradient(circle ${holeRadius}px at ${x}px ${y}px, transparent ${holeRadius - feather}px, black ${holeRadius}px)`;
+            bgContainer.style.webkitMaskImage = bgContainer.style.maskImage = mask;
+            scopeWrapper.style.display = 'block';
+            scopeWrapper.style.left = x + 'px'; scopeWrapper.style.top = y + 'px';
+            setTimeout(() => scopeWrapper.style.opacity = "1", 10);
+            bgContainer.style.cursor = 'none'; 
+        } else {
+            bgContainer.style.webkitMaskImage = bgContainer.style.maskImage = 'none';
+            scopeWrapper.style.opacity = "0";
+            setTimeout(() => { if(scopeWrapper.style.opacity === "0") scopeWrapper.style.display = 'none'; }, 300);
+            bgContainer.style.cursor = 'default';
+        }
+    };
+
+    const show = () => { isShowing = true; isInteracting = false; canvas.style.opacity = "1"; bgContainer.style.visibility = 'visible'; bgContainer.style.opacity = '1'; bgContainer.style.pointerEvents = 'all'; };
+    const hide = () => { isShowing = false; isInteracting = false; bgContainer.style.opacity = '0'; bgContainer.style.pointerEvents = 'none'; updateUI(null, false); setTimeout(() => { if(!isShowing) bgContainer.style.visibility = 'hidden'; }, 800); };
+
+    const resetIdle = (e) => {
+        if (!isShowing) { clearTimeout(idleTimer); idleTimer = setTimeout(show, idleSeconds * 1000); }
+        else {
+            if (!isInteracting) { isInteracting = true; canvas.style.opacity = "0"; }
+            if (e && e.clientX !== undefined) updateUI(e, true);
+            clearTimeout(restoreTimer);
+            restoreTimer = setTimeout(() => { if (isShowing) { isInteracting = false; canvas.style.opacity = "1"; updateUI(null, false); } }, idleSeconds * 1000);
+        }
+    };
+
+    bgContainer.onclick = (e) => { e.stopPropagation(); hide(); resetIdle(e); };
+    window.addEventListener('mousemove', resetIdle, { passive: true });
+    window.addEventListener('mousedown', resetIdle, { passive: true });
+    window.addEventListener('scroll', resetIdle, { passive: true });
+    window.addEventListener('keydown', (e) => { if(isShowing){ e.preventDefault(); e.stopPropagation(); hide(); } resetIdle(e); }, { capture: true, passive: false });
+
+    resetIdle({clientX: -1000, clientY: -1000});
+})();
+</script>
+
+<script type="text/javascript">
+// 亮度调节灯
+(function() {
+    // 1. 初始化亮度
+    const savedBrightness = localStorage.getItem('page-brightness-setting') || '1';
+    document.documentElement.style.filter = `brightness(${savedBrightness})`;
+
+    // 2. 创建主容器
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        position: fixed; top: 20px; right: 0px; z-index: 2147483647;
+        display: flex; align-items: center;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(200px); /* 初始大偏移 */
+    `;
+
+    // 3. 创建左侧手柄 (固定宽度 26px)
+    const handle = document.createElement('div');
+    handle.innerHTML = '◀';
+    handle.style.cssText = `
+        width: 26px; height: 40px; background: #222; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; border-radius: 8px 0 0 8px;
+        font-size: 14px; box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+        user-select: none;
+    `;
+
+    // 4. 创建内容区 (Slider部分)
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: rgba(0, 0, 0, 0.85); padding: 10px 15px;
+        display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+        /* 移除右圆角，让它缩进时彻底消失 */
+    `;
+
+    const slider = document.createElement('input');
+    slider.type = 'range'; slider.min = '0.2'; slider.max = '1.8'; slider.step = '0.05';
+    slider.value = savedBrightness;
+    slider.style.cursor = 'pointer';
+
+    const label = document.createElement('span');
+    label.innerText = '亮度';
+    label.style.cssText = 'color: white; font-size: 12px; white-space: nowrap; font-family: sans-serif;';
+
+    content.appendChild(label);
+    content.appendChild(slider);
+    wrapper.appendChild(handle);
+    wrapper.appendChild(content);
+    document.body.appendChild(wrapper);
+
+    // --- 逻辑控制 ---
+    let isHidden = true;
+    let autoHideTimer = null;
+
+    // 关键：计算内容区的真实宽度进行位移
+    const updatePosition = (hide) => {
+        isHidden = hide;
+        const contentWidth = content.offsetWidth;
+        if (isHidden) {
+            // 只移动 content 的宽度，handle 留在屏幕内
+            wrapper.style.transform = `translateX(${contentWidth}px)`;
+            handle.innerHTML = '◀';
+            handle.style.borderRadius = '8px 0 0 8px'; // 缩回时左侧圆角
+            clearTimeout(autoHideTimer);
+        } else {
+            wrapper.style.transform = 'translateX(0)';
+            handle.innerHTML = '☀';
+            handle.style.borderRadius = '8px 0 0 8px'; 
+            startAutoHideTimer();
+        }
+    };
+
+    const startAutoHideTimer = () => {
+        clearTimeout(autoHideTimer);
+        autoHideTimer = setTimeout(() => {
+            if (!isHidden) updatePosition(true);
+        }, 3000);
+    };
+
+    // 初始化：由于刚加载时 offsetWidth 可能为 0，需微延时计算
+    setTimeout(() => updatePosition(true), 50);
+
+    // 事件监听
+    handle.onclick = (e) => { e.stopPropagation(); updatePosition(!isHidden); };
+    wrapper.onmouseenter = () => clearTimeout(autoHideTimer);
+    wrapper.onmouseleave = () => { if (!isHidden) startAutoHideTimer(); };
+    
+    // 点击外部缩回
+    window.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target) && !isHidden) updatePosition(true);
+    });
+
+    wrapper.onclick = (e) => e.stopPropagation();
+
+    slider.oninput = (e) => {
+        const val = e.target.value;
+        document.documentElement.style.filter = `brightness(${val})`;
+        localStorage.setItem('page-brightness-setting', val);
+        startAutoHideTimer();
+    };
+
+})();
+</script>
+
 <canvas id="cursor-canvas" style="position:fixed;top:0;left:0;z-index:999;pointer-events:none;"></canvas>
 
 <script type="text/javascript">
@@ -6,18 +272,18 @@
     var canvas = document.getElementById('cursor-canvas');
     var ctx = canvas.getContext('2d');
     var particles = [];
-    
+
     // --- 【核心调优参数】 ---
     var config = {
         count: 100,          // 1. 数量：如果你觉得稀疏，调回到 100-120
         dist: 6000,          // 2. 非跟随线条距离：调大这个，背景线条会变多变长
         mDist: 25000,        // 3. 鼠标吸引范围
-        attract: 0.04,       
+        attract: 0.04,
         offsetX: 50,         // 偏移量
-        offsetY: 50,         
+        offsetY: 50,
         opacity: 0.6,        // 4. 【关键】最高透明度：调大这个(0.1-1.0)，线条会变亮变实
         lineWidth: 1.1,      // 5. 【关键】线条粗细：调大这个，线条会变粗
-        color: "46, 175, 125" 
+        color: "46, 175, 125"
     };
 
     var mouse = { x: null, y: null, max: config.mDist };
@@ -33,7 +299,7 @@
         mouse.x = e.clientX + config.offsetX;
         mouse.y = e.clientY + config.offsetY;
     };
-    
+
     window.onmouseout = function() {
         mouse.x = null;
         mouse.y = null;
@@ -74,16 +340,16 @@
                         p.x -= xc * config.attract;
                         p.y -= yc * config.attract;
                     }
-                    
+
                     // 计算基础透明度比率
                     var ratio = (curMax - dis) / curMax;
-                    
+
                     ctx.beginPath();
                     // --- 这里的修改让线条变明显 ---
-                    ctx.lineWidth = ratio * config.lineWidth; 
+                    ctx.lineWidth = ratio * config.lineWidth;
                     // 直接使用 config.opacity 乘以距离占比，不再硬编码 0.1
                     ctx.strokeStyle = "rgba(" + config.color + "," + (ratio * config.opacity) + ")";
-                    
+
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(d2.x, d2.y);
                     ctx.stroke();
