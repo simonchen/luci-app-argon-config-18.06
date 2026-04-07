@@ -13,6 +13,10 @@ end
 
 function action_check_sysinfo()
         local sysinfo = luci.util.ubus("system", "info") or { }
+	local traffic = luci.util.get_interface_traffic()
+	if traffic then
+		sysinfo.traffic = traffic
+	end
 
         luci.http.status(200, "OK")
 	luci.http.header("Cache-Control", "no-cache, must-revalidate")
