@@ -9,7 +9,7 @@
     const hasBreathEffect = true;     // [开关] 呼吸律动
     
     const bgColor = "rgba(0, 0, 0, 0.7)"; 
-    const idleSeconds = 5;  
+    const idleSeconds = 500;  
     const holeRadius = 150; 
     const feather = 20;
 
