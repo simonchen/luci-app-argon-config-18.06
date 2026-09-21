@@ -53,6 +53,9 @@ msgstr "强制亮色"
 msgid "Force Dark"
 msgstr "强制暗色"
 
+msgid "Force Green"
+msgstr "强制绿色"
+
 msgid "You can choose Theme color mode here"
 msgstr "你可以选择喜欢的主题模式"
 
@@ -61,6 +64,9 @@ msgstr "[亮色模式] 主色调"
 
 msgid "[Dark mode] Primary Color"
 msgstr "[暗色模式] 主色调"
+
+msgid "[Green mode] Primary Color"
+msgstr "[绿色模式] 主色调"
 
 msgid "A HEX Color ; ( Default: #5e72e4 )"
 msgstr "十六进制颜色值 ( 预设为：#5e72e4 )"
@@ -74,6 +80,9 @@ msgstr "[亮色模式] 透明度"
 msgid "[Dark mode] Transparency"
 msgstr "[暗色模式] 透明度"
 
+msgid "[Green mode] Transparency"
+msgstr "[绿色模式] 透明度"
+
 msgid "0 transparent - 1 opaque ; ( Suggest: transparent: 0 or translucent preset: 0.5 )"
 msgstr "0最透明 - 1不透明 ; ( 建议: 透明 0 或 半透明预设 0.5 )"
 
@@ -85,6 +94,9 @@ msgstr "[亮色模式] 毛玻璃模糊半径"
 
 msgid "[Dark mode] Frosted Glass Radius"
 msgstr "[暗色模式] 毛玻璃模糊半径"
+
+msgid "[Green mode] Frosted Glass Radius"
+msgstr "[绿色模式] 毛玻璃模糊半径"
 
 msgid "Larger value will more blurred ; ( Suggest: clear: 1 or blur preset: 10 )"
 msgstr "值越大越模糊; ( 建议: 清透 1 或 模糊预设 10 )"

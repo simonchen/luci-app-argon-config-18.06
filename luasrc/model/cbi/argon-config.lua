@@ -15,16 +15,19 @@ local space_used = space_total - space_free
 
 local free_byte = space_free * fstat.frsize
 
-local primary, dark_primary, blur_radius, blur_radius_dark, blur_opacity, mode, bing_background
+local primary, dark_primary, green_primary, blur_radius, blur_radius_green, blur_radius_dark, blur_opacity, mode, bing_background
 local login_panel_center, logo_url, custom_script
 
 if nxfs.access('/etc/config/argon') then
 	primary = uci:get_first('argon', 'global', 'primary')
 	dark_primary = uci:get_first('argon', 'global', 'dark_primary')
+	green_primary = uci:get_first('argon', 'global', 'green_primary')
 	blur_radius = uci:get_first('argon', 'global', 'blur')
 	blur_radius_dark = uci:get_first('argon', 'global', 'blur_dark')
+	blur_radius_green = uci:get_first('argon', 'global', 'blur_green')
 	blur_opacity = uci:get_first('argon', 'global', 'transparency')
 	blur_opacity_dark = uci:get_first('argon', 'global', 'transparency_dark')
+        blur_opacity_green = uci:get_first('argon', 'global', 'transparency_green')
 	mode = uci:get_first('argon', 'global', 'mode')
 	bing_background = uci:get_first('argon', 'global', 'bing_background')
 	login_panel_center = uci:get_first('argon', 'global', 'login_panel_center')
@@ -97,6 +100,7 @@ o = s:option(ListValue, 'mode', translate('Theme mode'))
 o:value('normal', translate('Follow System'))
 o:value('light', translate('Force Light'))
 o:value('dark', translate('Force Dark'))
+o:value('green', translate('Force Green'))
 o.default = mode
 o.rmempty = false
 o.description = translate('You can choose Theme color mode here')
@@ -136,6 +140,24 @@ o.rmempty = false
 
 o = s:option(Value, 'blur_dark', translate('[Dark mode] Frosted Glass Radius'), translate('Larger value will more blurred ; ( Suggest:  clear: 1 or blur preset: 10 )'))
 o.default = blur_radius_dark
+o.datatype = ufloat
+o.rmempty = false
+
+o = s:option(Value, 'green_primary', translate('[Green mode] Primary Color'), translate('A HEX Color ; ( Default: #bbcaaf )'))
+o.default = green_primary
+o.datatype = ufloat
+o.rmempty = false
+
+o = s:option(ListValue, 'transparency_green', translate('[Green mode] Transparency'), translate('0 transparent - 1 opaque ; ( Suggest: Black translucent preset: 0.5 )'))
+for _, v in ipairs(transparency_sets) do
+    o:value(v)
+end
+o.default = blur_opacity_green
+o.datatype = ufloat
+o.rmempty = false
+
+o = s:option(Value, 'blur_green', translate('[Green mode] Frosted Glass Radius'), translate('Larger value will more blurred ; ( Suggest:  clear: 1 or blur preset: 10 )'))
+o.default = blur_radius_green
 o.datatype = ufloat
 o.rmempty = false
 
