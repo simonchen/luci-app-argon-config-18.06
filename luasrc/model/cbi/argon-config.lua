@@ -143,12 +143,12 @@ o.default = blur_radius_dark
 o.datatype = ufloat
 o.rmempty = false
 
-o = s:option(Value, 'green_primary', translate('[Green mode] Primary Color'), translate('A HEX Color ; ( Default: #bbcaaf )'))
+o = s:option(Value, 'green_primary', translate('[Green mode] Primary Color'), translate('A HEX Color ; ( Default: #d96a6a )'))
 o.default = green_primary
 o.datatype = ufloat
 o.rmempty = false
 
-o = s:option(ListValue, 'transparency_green', translate('[Green mode] Transparency'), translate('0 transparent - 1 opaque ; ( Suggest: Black translucent preset: 0.5 )'))
+o = s:option(ListValue, 'transparency_green', translate('[Green mode] Transparency'), translate('0 transparent - 1 opaque ; ( Suggest: Green translucent preset: 0.5 )'))
 for _, v in ipairs(transparency_sets) do
     o:value(v)
 end
